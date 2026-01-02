@@ -12,19 +12,21 @@
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
         margin: 0;
-        padding: 20px;
+        padding: 0;
         background: #f5f5f5;
         color: #333;
         min-height: 100vh;
       }
 
       h1 {
+        display: none;
         text-align: center;
         color: #2c3e50;
         margin-bottom: 5px;
       }
 
       .subtitle {
+        display: none;
         text-align: center;
         color: #666;
         margin-bottom: 20px;
@@ -35,19 +37,21 @@
       }
 
       .container {
-        max-width: 1200px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 20px;
+        padding-bottom: 100px;
+      }
+
+      .main-panels {
+        display: flex;
+        gap: 20px;
+        height: 80vh;
       }
 
       .status-bar {
-        background: #fff;
-        padding: 10px 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: none !important;
       }
 
       .status {
@@ -67,11 +71,14 @@
       }
 
       .input-section {
+        flex: 1;
         background: #fff;
         border-radius: 8px;
         padding: 20px;
-        margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
       }
 
       .input-tabs {
@@ -102,10 +109,13 @@
 
       .tab-content {
         display: none;
+        flex: 1;
+        min-height: 0;
       }
 
       .tab-content.active {
-        display: block;
+        display: flex;
+        flex-direction: column;
       }
 
       .url-input-row {
@@ -134,13 +144,13 @@
 
       textarea {
         width: 100%;
-        height: 200px;
+        flex: 1;
         padding: 12px;
         border: 1px solid #ddd;
         border-radius: 6px;
         font-family: "Fira Code", "Monaco", "Consolas", monospace;
         font-size: 14px;
-        resize: vertical;
+        resize: none;
         line-height: 1.5;
       }
 
@@ -151,14 +161,20 @@
       }
 
       .mode-section {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         background: #fff;
-        border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 0;
+        padding: 15px 20px;
+        margin-bottom: 0;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 100;
       }
 
       .mode-section h3 {
+        display: none;
         margin-top: 0;
         margin-bottom: 15px;
         color: #2c3e50;
@@ -245,10 +261,13 @@
       }
 
       .output-section {
+        flex: 1;
         background: #fff;
         border-radius: 8px;
         overflow: hidden;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
       }
 
       .output-header {
@@ -263,8 +282,7 @@
 
       .output-content {
         padding: 20px;
-        min-height: 200px;
-        max-height: 500px;
+        flex: 1;
         overflow: auto;
         font-family: "Fira Code", "Monaco", "Consolas", monospace;
         font-size: 14px;
@@ -279,6 +297,7 @@
       }
 
       .examples-section {
+        display: none;
         background: #fff;
         border-radius: 8px;
         padding: 20px;
@@ -308,6 +327,7 @@
       }
 
       .info-box {
+        display: none;
         background: #e8f4fd;
         border-left: 4px solid #3498db;
         padding: 15px;
@@ -330,7 +350,23 @@
 
       @media (max-width: 600px) {
         body {
-          padding: 10px;
+          padding: 0;
+        }
+
+        .main-panels {
+          flex-direction: column;
+          height: auto;
+          min-height: 70vh;
+        }
+
+        .input-section,
+        .output-section {
+          flex: none;
+          height: 40vh;
+        }
+
+        .container {
+          padding-bottom: 150px;
         }
 
         .input-tabs,
@@ -374,14 +410,15 @@
         <span id="status" class="status">Loading modules...</span>
       </div>
 
-      <div class="input-section">
-        <div class="input-tabs">
-          <button class="tab-btn active" data-tab="paste">Paste HTML</button>
-          <button class="tab-btn" data-tab="url">Fetch from URL</button>
-        </div>
+      <div class="main-panels">
+        <div class="input-section">
+          <div class="input-tabs">
+            <button class="tab-btn active" data-tab="paste">Paste HTML</button>
+            <button class="tab-btn" data-tab="url">Fetch from URL</button>
+          </div>
 
-        <div id="paste-tab" class="tab-content active">
-          <textarea id="html-input" placeholder="Paste your HTML here...">
+          <div id="paste-tab" class="tab-content active">
+            <textarea id="html-input" placeholder="Paste your HTML here...">
 <!DOCTYPE html>
 <html>
 <head>
@@ -417,32 +454,53 @@
     </footer>
 </body>
 </html></textarea
-          >
+            >
+          </div>
+
+          <div id="url-tab" class="tab-content">
+            <div class="url-input-row">
+              <input type="url" id="url-input" placeholder="https://example.com (must support CORS)" />
+              <button id="fetch-btn" disabled>Fetch</button>
+            </div>
+            <p style="font-size: 12px; color: #888; margin-top: 8px">
+              Note: The URL must support CORS. Try APIs or sites with permissive CORS headers.
+            </p>
+          </div>
         </div>
 
-        <div id="url-tab" class="tab-content">
-          <div class="url-input-row">
-            <input type="url" id="url-input" placeholder="https://example.com (must support CORS)" />
-            <button id="fetch-btn" disabled>Fetch</button>
+        <div class="output-section">
+          <div class="output-header">
+            <span>Output</span>
+            <span id="match-count" class="match-count" style="display: none">0 matches</span>
           </div>
-          <p style="font-size: 12px; color: #888; margin-top: 8px">
-            Note: The URL must support CORS. Try APIs or sites with permissive CORS headers.
-          </p>
+          <div id="output" class="output-content">Results will appear here...</div>
         </div>
       </div>
 
       <div class="mode-section">
         <h3>Playground Mode</h3>
         <div class="mode-tabs">
-          <button class="mode-btn active" data-mode="selector">CSS Selector Query</button>
+          <button class="mode-btn active" data-mode="markdown">To Markdown</button>
+          <button class="mode-btn" data-mode="text">Extract Text</button>
+          <button class="mode-btn" data-mode="selector">CSS Selector Query</button>
           <button class="mode-btn" data-mode="pretty">Pretty Print HTML</button>
           <button class="mode-btn" data-mode="tree">Tree Structure</button>
           <button class="mode-btn" data-mode="stream">Stream Events</button>
-          <button class="mode-btn" data-mode="text">Extract Text</button>
-          <button class="mode-btn" data-mode="markdown">To Markdown</button>
         </div>
 
-        <div id="selector-options" class="mode-options active">
+        <div id="markdown-options" class="mode-options active">
+          <label for="markdown-selector-input">CSS Selector (optional - leave empty for whole document):</label>
+          <div class="selector-input">
+            <input
+              type="text"
+              id="markdown-selector-input"
+              placeholder="e.g., article, main, .content (or leave empty)"
+            />
+            <button id="markdown-btn" class="run-btn" disabled>Convert to Markdown</button>
+          </div>
+        </div>
+
+        <div id="selector-options" class="mode-options">
           <label for="selector-input">CSS Selector:</label>
           <div class="selector-input">
             <input
@@ -474,26 +532,6 @@
             <button id="text-btn" class="run-btn" disabled>Extract Text</button>
           </div>
         </div>
-
-        <div id="markdown-options" class="mode-options">
-          <label for="markdown-selector-input">CSS Selector (optional - leave empty for whole document):</label>
-          <div class="selector-input">
-            <input
-              type="text"
-              id="markdown-selector-input"
-              placeholder="e.g., article, main, .content (or leave empty)"
-            />
-            <button id="markdown-btn" class="run-btn" disabled>Convert to Markdown</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="output-section">
-        <div class="output-header">
-          <span>Output</span>
-          <span id="match-count" class="match-count" style="display: none">0 matches</span>
-        </div>
-        <div id="output" class="output-content">Results will appear here...</div>
       </div>
 
       <div class="examples-section">
@@ -896,6 +934,51 @@
         });
       });
 
+      // Debounce helper function
+      function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+          const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+          };
+          clearTimeout(timeout);
+          timeout = setTimeout(later, wait);
+        };
+      }
+
+      // Get the current active mode and run its action
+      function runCurrentMode() {
+        if (!ready) return;
+        const activeMode = document.querySelector(".mode-btn.active")?.dataset?.mode;
+        switch (activeMode) {
+          case "markdown":
+            convertToMarkdownMode();
+            break;
+          case "text":
+            extractTextMode();
+            break;
+          case "selector":
+            runQuery();
+            break;
+          case "pretty":
+            prettyPrint();
+            break;
+          case "tree":
+            showTree();
+            break;
+          case "stream":
+            showStreamEvents();
+            break;
+        }
+      }
+
+      // Debounced version of runCurrentMode
+      const debouncedRunCurrentMode = debounce(runCurrentMode, 500);
+
+      // Add event listener to textarea for auto-update
+      htmlInputEl.addEventListener("input", debouncedRunCurrentMode);
+
       async function init() {
         try {
           statusEl.textContent = "Loading modules...";
@@ -913,6 +996,9 @@
           document.querySelectorAll("button").forEach((btn) => {
             btn.disabled = false;
           });
+
+          // Auto-process the initial content on page load
+          runCurrentMode();
         } catch (error) {
           statusEl.textContent = "Error loading";
           statusEl.className = "status error";
