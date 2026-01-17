@@ -280,6 +280,34 @@
         align-items: center;
       }
 
+      .output-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .copy-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .copy-btn.copied {
+        background: #27ae60;
+        border-color: #27ae60;
+      }
+
       .output-content {
         padding: 20px;
         flex: 1;
@@ -470,7 +498,10 @@
 
         <div class="output-section">
           <div class="output-header">
-            <span>Output</span>
+            <div class="output-header-left">
+              <span>Output</span>
+              <button id="copy-btn" class="copy-btn">Copy</button>
+            </div>
             <span id="match-count" class="match-count" style="display: none">0 matches</span>
           </div>
           <div id="output" class="output-content">Results will appear here...</div>
@@ -911,6 +942,47 @@
       document.getElementById("text-btn").addEventListener("click", extractTextMode);
       document.getElementById("markdown-btn").addEventListener("click", convertToMarkdownMode);
       document.getElementById("fetch-btn").addEventListener("click", fetchUrl);
+
+      // Copy button functionality
+      document.getElementById("copy-btn").addEventListener("click", async function() {
+        const copyBtn = this;
+        const outputContent = document.getElementById("output").textContent;
+
+        try {
+          await navigator.clipboard.writeText(outputContent);
+          copyBtn.textContent = "Copied!";
+          copyBtn.classList.add("copied");
+
+          setTimeout(() => {
+            copyBtn.textContent = "Copy";
+            copyBtn.classList.remove("copied");
+          }, 2000);
+        } catch (err) {
+          // Fallback for older browsers
+          const textArea = document.createElement("textarea");
+          textArea.value = outputContent;
+          textArea.style.position = "fixed";
+          textArea.style.left = "-999999px";
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand("copy");
+            copyBtn.textContent = "Copied!";
+            copyBtn.classList.add("copied");
+
+            setTimeout(() => {
+              copyBtn.textContent = "Copy";
+              copyBtn.classList.remove("copied");
+            }, 2000);
+          } catch (e) {
+            copyBtn.textContent = "Failed";
+            setTimeout(() => {
+              copyBtn.textContent = "Copy";
+            }, 2000);
+          }
+          document.body.removeChild(textArea);
+        }
+      });
 
       selectorInputEl.addEventListener("keypress", (e) => {
         if (e.key === "Enter") runQuery();
