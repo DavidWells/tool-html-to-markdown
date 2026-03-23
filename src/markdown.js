@@ -231,7 +231,10 @@ function toMarkdownWalk(node, builder, preserveWhitespace, listDepth) {
   const tag = String(name || "").toLowerCase();
 
   if (tag === "img") {
-    builder.raw(toHTML(node, { indent: 0, indentSize: 2, pretty: false }));
+    const attrs = node.attrs || {};
+    const alt = attrs.alt || "";
+    const src = attrs.src || "";
+    builder.raw(`![${alt}](${src})`);
     return;
   }
 

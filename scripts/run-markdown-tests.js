@@ -48,10 +48,10 @@ results.push(
 );
 
 results.push(
-  test("tables convert to markdown, images preserved as HTML", () => {
+  test("tables and images convert to markdown", () => {
     const doc = new JustHTML("<p>Hi<img src=x alt=y>there</p><table><thead><tr><th>Name</th><th>Val</th></tr></thead><tbody><tr><td>A</td><td>B</td></tr></tbody></table>");
     const md = doc.toMarkdown();
-    assert.ok(md.includes("<img src=x alt=y>"));
+    assert.ok(md.includes("![y](x)"));
     assert.ok(md.includes("| Name"));
     assert.ok(md.includes("| ---"));
     assert.ok(md.includes("| A"));
