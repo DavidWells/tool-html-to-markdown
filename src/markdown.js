@@ -1,11 +1,16 @@
 import { toHTML } from "./serialize.js";
 
+const SMART_QUOTES = {
+  "\u2018": "'", "\u2019": "'",  // curly single quotes
+  "\u201C": '"', "\u201D": '"',  // curly double quotes
+};
+
 function markdownEscapeText(s) {
   if (!s) return "";
   const out = [];
   for (const ch of String(s)) {
     if ("\\`*_[]".includes(ch)) out.push("\\");
-    out.push(ch);
+    out.push(SMART_QUOTES[ch] || ch);
   }
   return out.join("");
 }
@@ -138,6 +143,70 @@ const MARKDOWN_BLOCK_ELEMENTS = new Set([
   "table",
 ]);
 
+function cellText(node) {
+  const b = new MarkdownBuilder();
+  toMarkdownWalk(node, b, false, 0);
+  return b.finish().replace(/\n/g, " ").replace(/\|/g, "\\|");
+}
+
+function tableToRows(tableNode) {
+  const rows = [];
+  const walk = (parent) => {
+    for (const child of parent.children || []) {
+      const tag = String(child?.name || "").toLowerCase();
+      if (tag === "tr") {
+        const cells = [];
+        let isHeader = false;
+        for (const cell of child.children || []) {
+          const cellTag = String(cell?.name || "").toLowerCase();
+          if (cellTag === "th" || cellTag === "td") {
+            if (cellTag === "th") isHeader = true;
+            cells.push(cellText(cell));
+          }
+        }
+        if (cells.length) rows.push({ cells, isHeader });
+      } else if (tag === "thead" || tag === "tbody" || tag === "tfoot" || tag === "colgroup") {
+        walk(child);
+      }
+    }
+  };
+  walk(tableNode);
+  return rows;
+}
+
+function rowsToMarkdownTable(rows) {
+  if (!rows.length) return "";
+  const colCount = Math.max(...rows.map((r) => r.cells.length));
+  const normalized = rows.map((r) => {
+    const cells = r.cells.slice();
+    while (cells.length < colCount) cells.push("");
+    return { cells, isHeader: r.isHeader };
+  });
+
+  const widths = Array.from({ length: colCount }, () => 3);
+  for (const row of normalized) {
+    for (let i = 0; i < colCount; i++) {
+      widths[i] = Math.max(widths[i], row.cells[i].length);
+    }
+  }
+
+  const pad = (s, w) => s + " ".repeat(w - s.length);
+  const formatRow = (cells) =>
+    "| " + cells.map((c, i) => pad(c, widths[i])).join(" | ") + " |";
+
+  const lines = [];
+  const hasHeader = normalized[0].isHeader;
+  const headerRow = hasHeader ? normalized[0] : { cells: Array.from({ length: colCount }, () => ""), isHeader: true };
+
+  lines.push(formatRow(headerRow.cells));
+  lines.push("| " + widths.map((w) => "-".repeat(w)).join(" | ") + " |");
+
+  const dataRows = hasHeader ? normalized.slice(1) : normalized;
+  for (const row of dataRows) lines.push(formatRow(row.cells));
+
+  return lines.join("\n");
+}
+
 function toMarkdownWalk(node, builder, preserveWhitespace, listDepth) {
   const name = node?.name;
 
@@ -168,7 +237,12 @@ function toMarkdownWalk(node, builder, preserveWhitespace, listDepth) {
 
   if (tag === "table") {
     builder.ensureNewlines(builder._buf.length ? 2 : 0);
-    builder.raw(toHTML(node, { indent: 0, indentSize: 2, pretty: false }));
+    const rows = tableToRows(node);
+    if (rows.length) {
+      builder.raw(rowsToMarkdownTable(rows));
+    } else {
+      builder.raw(toHTML(node, { indent: 0, indentSize: 2, pretty: false }));
+    }
     builder.ensureNewlines(2);
     return;
   }
@@ -246,7 +320,24 @@ function toMarkdownWalk(node, builder, preserveWhitespace, listDepth) {
       const marker = ordered ? `${idx}. ` : "- ";
       builder.raw(indent);
       builder.raw(marker);
-      for (const liChild of child.children || []) toMarkdownWalk(liChild, builder, false, listDepth + 1);
+      let pIndex = 0;
+      for (const liChild of child.children || []) {
+        const liChildTag = String(liChild?.name || "").toLowerCase();
+        if (liChildTag === "p") {
+          if (pIndex > 0) {
+            builder.newline(1);
+            builder.newline(1);
+            builder.raw(indent);
+            builder.raw(" ".repeat(marker.length));
+          }
+          for (const pChild of liChild.children || []) {
+            toMarkdownWalk(pChild, builder, false, listDepth + 1);
+          }
+          pIndex++;
+        } else {
+          toMarkdownWalk(liChild, builder, false, listDepth + 1);
+        }
+      }
       idx += 1;
     }
     builder.ensureNewlines(2);
